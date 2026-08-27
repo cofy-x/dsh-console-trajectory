@@ -10,7 +10,7 @@ export { TrajectoryViewerRuntime } from './runtime.js'
 export type { TrajectoryViewerSeams, TrajectoryViewerSnapshot, ViewerOpenResult, ViewerServerHandle } from './runtime.js'
 
 export const name = 'dsh-console-trajectory'
-export const inject = ['commands']
+export const inject = ['commands', 'sessionQuery']
 
 async function execute(ctx: Context, runtime: TrajectoryViewerRuntime, invocation: CommandInvocation): Promise<CommandResult> {
   if (invocation.rawInput.trim() !== '') return { kind: 'error', text: 'Usage: /trajectory' }
@@ -32,7 +32,9 @@ export async function apply(ctx: Context): Promise<void> {
   const serverFiber = await ctx.plugin(LazyWebServer)
   const server = serverFiber.ctx.get('trajectoryWebServer') as LazyWebServer | undefined
   if (server === undefined) throw new Error('dsh-console-trajectory: web server service is unavailable')
-  const gateway = new TrajectorySessionGateway(ctx, server)
+  const sessionQuery = ctx.get('sessionQuery')
+  if (sessionQuery === undefined) throw new Error('dsh-console-trajectory: DSH Session query service is unavailable')
+  const gateway = new TrajectorySessionGateway(ctx, server, sessionQuery)
   ctx.effect(() => () => { gateway.dispose() }, 'dsh-console-trajectory: session gateway')
   ctx.effect(() => registerTrajectoryFrontend(server), 'dsh-console-trajectory: frontend')
   const runtime = new TrajectoryViewerRuntime({

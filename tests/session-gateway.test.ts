@@ -1,5 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
+import type { SessionQueryEngine } from '@deepseek-ai/dsh-session-query'
 import { afterEach, describe, expect, it } from 'vitest'
 import { LazyWebServer } from '../src/lazy-webserver.js'
 import { TrajectorySessionGateway } from '../src/session-gateway.js'
@@ -11,7 +12,12 @@ describe('TrajectorySessionGateway', () => {
   it('serves only explicitly registered Sessions on loopback', async () => {
     const ctx = new Context()
     const server = new LazyWebServer(ctx)
-    const gateway = new TrajectorySessionGateway(ctx, server)
+    const query = {
+      filterSessions: async () => [],
+      readTitleSnapshots: async () => [],
+      readSession: async () => { throw new Error('not found') },
+    } as unknown as SessionQueryEngine
+    const gateway = new TrajectorySessionGateway(ctx, server, query)
     cleanups.push(async () => { gateway.dispose(); await server.close() })
     const port = await server.listen()
     const origin = `http://127.0.0.1:${port}`
@@ -19,6 +25,8 @@ describe('TrajectorySessionGateway', () => {
 
     const session = Session.create(SessionId('dsh-console-test'))
     gateway.register(session)
+    const list = await fetch(`${origin}/api/sessions`).then(next => next.json())
+    expect(list).toMatchObject({ sessions: [{ id: 'dsh-console-test', current: true, live: true }] })
     const response = await fetch(`${origin}/api/sessions/dsh-console-test`)
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ header: { id: 'dsh-console-test' }, events: [] })
