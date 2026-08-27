@@ -1,0 +1,9 @@
+.app { height: 100%; display: flex; flex-direction: column; min-width: 0; }
+.header { min-height: 52px; padding: 0 18px; border-bottom: 1px solid var(--dsw-color-border-2); display: flex; align-items: center; justify-content: space-between; gap: 18px; background: var(--dsw-color-background-2); }
+.header > div { display: flex; align-items: center; gap: 10px; }
+.header code { color: var(--dsw-color-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge { border: 1px solid var(--dsw-color-border-2); border-radius: 999px; color: var(--dsw-color-text-3); font-size: 10px; letter-spacing: .08em; padding: 2px 7px; }
+.viewer { flex: 1; min-height: 0; }
+.state { height: 100%; display: grid; place-content: center; text-align: center; color: var(--dsw-color-text-3); }
+.state h1 { color: var(--dsw-color-text-1); }
+.warning { padding: 8px 18px; color: var(--dsw-color-text-warning); background: var(--dsw-color-background-warning); border-bottom: 1px solid var(--dsw-color-border-warning); }

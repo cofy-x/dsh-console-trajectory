@@ -1,0 +1,5 @@
+# Optional read-only trajectory viewer for the dsh-console profile. The plugin
+# binds no socket until /trajectory is invoked.
+- insert:
+    - id: dsh-console-trajectory
+      name: '@cofy-x/dsh-console-trajectory'
