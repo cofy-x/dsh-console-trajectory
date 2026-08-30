@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: cofy-x/dsh-console
-          ref: 225388ec53cd40a8ea1a82e896fc831a44eb3209
+          ref: 52d0684fb3c23baf33453928d15827b6a731c64f
           path: _console
           fetch-depth: 1
       - name: Install pnpm
@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: cofy-x/dsh-console
-          ref: 225388ec53cd40a8ea1a82e896fc831a44eb3209
+          ref: 52d0684fb3c23baf33453928d15827b6a731c64f
           path: _console
           fetch-depth: 1
       - name: Check out audited DSH release source
