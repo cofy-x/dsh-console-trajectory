@@ -64,6 +64,7 @@ jobs:
           assert.equal(manifest.version, expectedVersion);
           assert.match(manifest.version, /^\d+\.\d+\.\d+-alpha\.\d+$/);
           assert.equal(manifest.publishConfig?.access, 'public');
+          assert.equal(manifest.publishConfig?.tag, 'latest');
           if (tagPush) {
             assert.equal(process.env.GITHUB_REF_NAME, `v${manifest.version}`);
             assert.equal(execFileSync('git', ['cat-file', '-t', `refs/tags/${process.env.GITHUB_REF_NAME}`], { encoding: 'utf8' }).trim(), 'tag');
