@@ -2,23 +2,89 @@ name: Release Check
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Exact 40-character commit SHA to verify
+        required: true
+        type: string
+      version:
+        description: Expected package version
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-check-${{ inputs.ref || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  release-check:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+      - name: Check out exact release identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          version: 11.0.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+      - name: Check out compatible Console host
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: cofy-x/dsh-console
+          ref: 52d0684fb3c23baf33453928d15827b6a731c64f
+          path: _console
+          fetch-depth: 1
+      - name: Install pnpm
+        uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 11.24.0
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: npm publish --dry-run
+      - name: Validate version, commit, and tag identity
+        env:
+          EXPECTED_REF: ${{ inputs.ref }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { execFileSync } from 'node:child_process';
+          import { readFileSync } from 'node:fs';
+          const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
+          const tagPush = process.env.GITHUB_EVENT_NAME === 'push';
+          const expectedVersion = tagPush ? process.env.GITHUB_REF_NAME.slice(1) : process.env.EXPECTED_VERSION;
+          assert.equal(manifest.name, '@cofy-x/dsh-console-trajectory');
+          assert.equal(manifest.version, expectedVersion);
+          assert.match(manifest.version, /^\d+\.\d+\.\d+-alpha\.\d+$/);
+          assert.equal(manifest.publishConfig?.access, 'public');
+          if (tagPush) {
+            assert.equal(process.env.GITHUB_REF_NAME, `v${manifest.version}`);
+            assert.equal(execFileSync('git', ['cat-file', '-t', `refs/tags/${process.env.GITHUB_REF_NAME}`], { encoding: 'utf8' }).trim(), 'tag');
+          } else {
+            assert.match(process.env.EXPECTED_REF, /^[0-9a-f]{40}$/);
+            assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), process.env.EXPECTED_REF);
+          }
+          EOF
+      - name: Install dependencies from lockfile
+        run: pnpm install --frozen-lockfile
+      - name: Build compatible Console host
+        run: |
+          pnpm --dir _console install --frozen-lockfile
+          pnpm --dir _console run build:cli
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm test:package
+      - name: Verify Console host integration
+        run: pnpm test:integration:host
+        env:
+          DSH_CONSOLE_ROOT: ${{ github.workspace }}/_console
+      - name: Inspect publish tarball
+        run: npm pack --dry-run --json

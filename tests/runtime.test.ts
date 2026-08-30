@@ -83,4 +83,25 @@ describe('TrajectoryViewerRuntime', () => {
     await expect(opening).rejects.toThrow('cancelled')
     await vi.waitFor(() => { expect(dispose).toHaveBeenCalledTimes(1) })
   })
+
+  it('clears subscribers when disposed during a failed startup', async () => {
+    const listener = vi.fn()
+    const runtime = new TrajectoryViewerRuntime({
+      registerSession,
+      startServer: signal => new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => { reject(signal.reason) }, { once: true })
+      }),
+      openBrowser: vi.fn(),
+    })
+    runtime.subscribe(listener)
+    const opening = runtime.open(session, new AbortController().signal)
+    const disposing = runtime.dispose()
+
+    await expect(opening).rejects.toThrow('disposed during startup')
+    await disposing
+    listener.mockClear()
+    expect(runtime.getSnapshot()).toEqual({ status: 'idle' })
+    await expect(runtime.open(session, new AbortController().signal)).rejects.toThrow('disposed')
+    expect(listener).not.toHaveBeenCalled()
+  })
 })

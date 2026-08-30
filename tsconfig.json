@@ -13,8 +13,7 @@
     "types": ["node", "vitest/globals"],
     "rootDir": ".",
     "outDir": "dist",
-    "noEmit": true,
-    "skipLibCheck": true
+    "noEmit": true
   },
   "include": ["src", "tests", "vitest.config.ts"]
 }

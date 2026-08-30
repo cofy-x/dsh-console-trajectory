@@ -64,6 +64,14 @@ export function projectDshSession(events: readonly SessionEvent[]): ProjectedTra
           const kind = chunk.type === 'text-delta' ? 'text' : 'reasoning'
           const text = previous?.kind === kind ? previous.text + chunk.text : chunk.text
           partial.blocks.set(chunk.index, { kind, text })
+        } else if (chunk.type === 'tool-call-delta') {
+          const previous = partial.blocks.get(chunk.index)
+          partial.blocks.set(chunk.index, {
+            kind: 'tool-call',
+            callId: String(chunk.id),
+            name: chunk.name ?? (previous?.kind === 'tool-call' ? previous.name : ''),
+            argsRaw: (previous?.kind === 'tool-call' ? previous.argsRaw : '') + chunk.argumentsDelta,
+          })
         } else if (chunk.type === 'block-end') {
           partial.blocks.set(chunk.index, toAssistantBlock(chunk.block))
         }
@@ -136,7 +144,12 @@ export function projectDshSession(events: readonly SessionEvent[]): ProjectedTra
         for (let index = requests.length - 1; index >= 0; index -= 1) {
           const request = requests[index]
           if (request?.purpose === 'assistant' && request.turn === event.data.turn) {
-            requests[index] = { ...request, status: 'error', error: event.data.reason.error.message, completedAt: event.time }
+            requests[index] = {
+              ...request,
+              status: 'error',
+              error: displayFailure(event.data.reason.error),
+              completedAt: event.time,
+            }
             break
           }
         }
@@ -165,6 +178,10 @@ export function projectDshSession(events: readonly SessionEvent[]): ProjectedTra
   }
 
   return { nodes, requests }
+}
+
+function displayFailure(failure: { readonly code: string; readonly message: string }): string {
+  return failure.code === 'AUTH' ? failure.code : failure.message
 }
 
 function stepKey(turn: number, step: number): string { return `${turn}\u0000${step}` }

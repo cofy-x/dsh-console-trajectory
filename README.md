@@ -4,6 +4,8 @@ An optional, local, read-only Trajectory Viewer for [DSH Console](https://github
 
 It opens the current canonical DSH Session in a dedicated browser surface. It does not start another Agent, duplicate the Session, expose a prompt box, or create a second DSH runtime.
 
+The initial alpha is verified with DeepSeek Harness releases from the npm-default `0.1.1-rc.2` through the current source release `0.1.2-alpha.1`. Its compatibility ceiling advances only after each new DSH release passes API and host-integration review; DSH itself should continue to be installed normally, without a pinned install command.
+
 ## Install
 
 ```bash
