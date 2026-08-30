@@ -103,9 +103,7 @@ export class TrajectoryViewerRuntime {
     if (server === undefined && starting !== undefined) {
       try {
         server = await starting
-      } catch {
-        return
-      }
+      } catch {}
     }
     await server?.dispose()
     this.update(Object.freeze({ status: 'idle' }))

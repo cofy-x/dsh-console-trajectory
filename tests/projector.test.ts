@@ -25,4 +25,25 @@ describe('projectDshSession', () => {
     expect(result.nodes[0]).toMatchObject({ kind: 'assistant', blocks: [{ kind: 'text', text: 'hello' }] })
     expect(result.requests[0]).toMatchObject({ status: 'running', completedAt: null })
   })
+
+  it('projects an in-flight tool call from canonical deltas', () => {
+    const result = projectDshSession(events([
+      { type: 'step/start', seq: 0, time: 10, data: { turn: 2, step: 1 } },
+      { type: 'assistant/chunk', seq: 1, time: 11, data: { turn: 2, step: 1, chunk: { type: 'tool-call-delta', index: 0, id: 'call-1', name: 'read', argumentsDelta: '{"path":' } } },
+      { type: 'assistant/chunk', seq: 2, time: 12, data: { turn: 2, step: 1, chunk: { type: 'tool-call-delta', index: 0, id: 'call-1', argumentsDelta: '"README.md"}' } } },
+    ]))
+    expect(result.nodes[0]).toMatchObject({
+      kind: 'assistant',
+      blocks: [{ kind: 'tool-call', callId: 'call-1', name: 'read', argsRaw: '{"path":"README.md"}' }],
+    })
+  })
+
+  it('does not expose provider authentication diagnostics', () => {
+    const result = projectDshSession(events([
+      { type: 'step/start', seq: 0, time: 10, data: { turn: 1, step: 1 } },
+      { type: 'assistant/message', seq: 1, time: 11, data: { turn: 1, step: 1, message: { id: 'a', role: 'assistant', content: [] } } },
+      { type: 'turn/end', seq: 2, time: 12, data: { turn: 1, reason: { kind: 'error', error: { code: 'AUTH', message: 'credential fragment' } } } },
+    ]))
+    expect(result.requests[0]).toMatchObject({ status: 'error', error: 'AUTH' })
+  })
 })

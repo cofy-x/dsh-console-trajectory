@@ -1,0 +1,81 @@
+name: Publish to npm
+
+on:
+  workflow_run:
+    workflows: ['Release Check']
+    types: [completed]
+
+concurrency:
+  group: npm-publish-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'cofy-x/dsh-console-trajectory' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: npm
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Install pnpm
+        uses: pnpm/action-setup@f520eceda224fe1a4aed5a2a27a194379a409996 # v6
+        with:
+          version: 11.24.0
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Install trusted-publishing npm version
+        run: npm install --global npm@11.5.1
+      - name: Validate annotated tag and package identity
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
+          assert.equal(manifest.name, '@cofy-x/dsh-console-trajectory');
+          assert.match(manifest.version, /^\d+\.\d+\.\d+-alpha\.\d+$/);
+          assert.equal(manifest.publishConfig?.access, 'public');
+          EOF
+          RELEASE_TAG="v$(node -p "require('./package.json').version")"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(git cat-file -t "refs/tags/$RELEASE_TAG")" = tag
+          test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$RELEASE_SHA"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      - name: Install dependencies from lockfile
+        run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm test:package
+      - name: Publish package
+        run: npm publish --access public
+      - name: Verify npm dist-tags
+        run: |
+          node --input-type=module <<'EOF'
+          import assert from 'node:assert/strict';
+          import { execFileSync } from 'node:child_process';
+          import { readFileSync } from 'node:fs';
+          const manifest = JSON.parse(readFileSync('package.json', 'utf8'));
+          const tags = JSON.parse(execFileSync('npm', ['view', manifest.name, 'dist-tags', '--json'], { encoding: 'utf8' }));
+          assert.equal(tags.latest, manifest.version);
+          EOF
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$RELEASE_TAG" --verify-tag --prerelease --generate-notes --title "$RELEASE_TAG"

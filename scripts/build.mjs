@@ -13,7 +13,6 @@ await build({
   platform: 'node',
   target: 'node24',
   packages: 'external',
-  sourcemap: true,
 })
 
 await build({
