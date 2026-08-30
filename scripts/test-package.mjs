@@ -32,6 +32,7 @@ const manifest = JSON.parse(await readFile('package.json', 'utf8'))
 assert.equal(manifest.name, packageName)
 assert.equal(manifest.engines?.node, '>=24')
 assert.equal(manifest.publishConfig?.access, 'public')
+assert.equal(manifest.publishConfig?.tag, 'latest')
 assert.deepEqual(manifest.dsh?.compatibility, {
   minimum: '0.1.1-rc.2',
   maximumTested: '0.1.2-alpha.1',
