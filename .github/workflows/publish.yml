@@ -64,7 +64,7 @@ jobs:
       - run: pnpm build
       - run: pnpm test:package
       - name: Publish package
-        run: npm publish --access public
+        run: npm publish --access public --tag latest
       - name: Verify npm dist-tags
         run: |
           node --input-type=module <<'EOF'
