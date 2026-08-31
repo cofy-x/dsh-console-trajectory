@@ -7,8 +7,9 @@ import crossSpawn from 'cross-spawn'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const consoleRoot = resolve(process.env.DSH_CONSOLE_ROOT ?? join(root, '..', 'dsh-console'))
-const consolePackage = join(consoleRoot, 'apps', 'cli')
-const dshBin = join(consoleRoot, 'node_modules', '.bin', 'dsh')
+const consolePackage = resolve(process.env.DSH_CONSOLE_PACKAGE_ROOT ?? join(consoleRoot, 'apps', 'cli'))
+const trajectoryPackage = resolve(process.env.DSH_TRAJECTORY_PACKAGE_ROOT ?? root)
+const dshBin = resolve(process.env.DSH_BIN ?? join(consoleRoot, 'node_modules', '.bin', 'dsh'))
 const fakePlugin = pathToFileURL(join(consoleRoot, 'scripts', 'fixtures', 'dsh-integration', 'fake-llm.mjs')).href
 const probePlugin = pathToFileURL(join(root, 'scripts', 'fixtures', 'host-integration-probe.mjs')).href
 
@@ -28,7 +29,7 @@ async function run(command, args, options) {
   })
 }
 
-const trajectoryManifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
+const trajectoryManifest = JSON.parse(await readFile(join(trajectoryPackage, 'package.json'), 'utf8'))
 const consoleManifest = JSON.parse(await readFile(join(consolePackage, 'package.json'), 'utf8'))
 assert.equal(trajectoryManifest.dependencies['@deepseek-ai/cordis'], undefined)
 assert.equal(consoleManifest.dependencies['@deepseek-ai/cordis'], undefined)
@@ -41,7 +42,7 @@ try {
   const resultFile = join(temporaryRoot, 'result.json')
   await mkdir(packageScope, { recursive: true })
   await symlink(consolePackage, join(packageScope, 'dsh-console'), process.platform === 'win32' ? 'junction' : 'dir')
-  await symlink(root, join(packageScope, 'dsh-console-trajectory'), process.platform === 'win32' ? 'junction' : 'dir')
+  await symlink(trajectoryPackage, join(packageScope, 'dsh-console-trajectory'), process.platform === 'win32' ? 'junction' : 'dir')
   await writeFile(join(profileDir, 'package.json'), JSON.stringify({
     name: 'dsh-profile-trajectory-integration',
     private: true,
