@@ -25,3 +25,9 @@ The following upstream work is intentionally not copied wholesale:
 - the upstream attachment cache and canonical image-reference resolver, because adopting its private client state would cross the read-only plugin boundary. Inline renderable image payloads remain supported; durable attachment references require a future official read service.
 
 On each DSH release, repeat this comparison, update the package's `dsh.compatibility.maximumTested` only after host integration passes, and record newly selected or deferred ports here.
+
+## 0.1.2-alpha.2 audit
+
+The alpha.2 audit compares the same pinned presentation source with DeepSeek Harness `0a53fb55bea101816fa226bb964ae2bed71c343b` (`dsh-v0.1.2-alpha.2`). Upstream's trajectory presentation source did not change between alpha.1 and alpha.2, so no UI code is copied for this release.
+
+The host-facing audit covers the new optional `SessionEvent.ignorable` envelope marker, stricter Session projection service ownership, duplicate-install-safe shared values, and Cordis/loader patch releases. The plugin continues to consume events through the public Session and SessionQuery services, treats the new marker as read-only envelope metadata, declares no projection service, and relies on host-provided runtime peers. No second Session owner, projection registry, agent loop, or persistence layer is introduced.

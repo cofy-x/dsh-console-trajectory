@@ -35,7 +35,7 @@ assert.equal(manifest.publishConfig?.access, 'public')
 assert.equal(manifest.publishConfig?.tag, 'latest')
 assert.deepEqual(manifest.dsh?.compatibility, {
   minimum: '0.1.1-rc.2',
-  maximumTested: '0.1.2-alpha.1',
+  maximumTested: '0.1.2-alpha.2',
 })
 for (const name of runtimePackages) {
   assert.equal(manifest.dependencies?.[name], undefined, `${name} must not ship as a runtime dependency`)
