@@ -1,6 +1,6 @@
 {
   "name": "@cofy-x/dsh-console-trajectory",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Optional DSH-native trajectory viewer for DSH Console",
   "type": "module",
   "license": "Apache-2.0",
