@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-08-31
+
+### Changed
+
+- Verify the read-only plugin and released Console host through DeepSeek Harness `0.1.2-alpha.2`.
+- Audit the new ignorable Session event marker, projection ownership, and duplicate-install-safe runtime dependency changes without importing a second host runtime.
+
+## [0.1.0-alpha.1] - 2026-08-31
+
+### Changed
+
+- Make npm and GitHub release recovery idempotent and verify registry version, commit identity, and default dist-tag before completing a release.
+- Allow host integration to select registry-installed Console and trajectory package roots for final release smoke tests.
+
 ## [0.1.0-alpha.0] - 2026-08-30
 
 ### Added
